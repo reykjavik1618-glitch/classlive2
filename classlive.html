@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>ClassLive</title>
+<style>
+:root {
+  --bg: #f0f4ff;
+  --card: #ffffff;
+  --border: #bfdbfe;
+  --text: #1e293b;
+  --muted: #64748b;
+  --primary: #2563eb;
+  --primary2: #0891b2;
+  --primary-dark: #1d4ed8;
+  --danger: #f43f5e;
+  --success: #22c55e;
+  --warning: #fbbf24;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: linear-gradient(135deg, #f0f4ff 0%, #e0f2fe 60%, #ccfbf1 100%);
+  min-height: 100vh;
+  color: var(--text);
+}
+.screen { display: none; min-height: 100vh; padding: 16px; }
+.screen.active { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.screen.top { justify-content: flex-start; padding-top: 20px; }
+
+/* Cards */
+.card {
+  background: var(--card);
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  padding: 28px 24px;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 0 4px 20px rgba(37,99,235,0.08);
+}
+.card-wide { max-width: 680px; }
+
+/* Logo */
+.logo { text-align: center; margin-bottom: 24px; }
+.logo h1 { font-size: 2rem; font-weight: 800; background: linear-gradient(135deg, #2563eb, #0891b2); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.logo p { color: var(--muted); font-size: 0.85rem; margin-top: 4px; }
+
+/* Inputs */
+input, textarea {
+  width: 100%;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 1rem;
+  color: var(--text);
+  background: #f8faff;
+  outline: none;
+  transition: border-color 0.2s;
+  font-family: inherit;
+}
+input:focus, textarea:focus { border-color: var(--primary); background: white; }
+textarea { resize: vertical; min-height: 80px; }
+
+/* Buttons */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  width: 100%; padding: 13px 20px;
+  border-radius: 10px; border: none; cursor: pointer;
+  font-size: 1rem; font-weight: 600; transition: all 0.15s;
+  text-decoration: none;
+}
+.btn-primary { background: linear-gradient(135deg, var(--primary), var(--primary2)); color: white; }
+.btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+.btn-ghost { background: transparent; border: 1.5px solid var(--border); color: var(--muted); }
+.btn-ghost:hover { border-color: var(--primary); color: var(--primary); }
+.btn-danger { background: var(--danger); color: white; }
+.btn-danger:hover { opacity: 0.9; }
+.btn-sm { padding: 8px 14px; font-size: 0.85rem; width: auto; border-radius: 8px; }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+/* Room code display */
+.room-badge {
+  text-align: center; padding: 12px; background: linear-gradient(135deg, #dbeafe, #e0f2fe);
+  border-radius: 12px; border: 1.5px solid var(--border); margin-bottom: 16px;
+}
+.room-badge .code { font-size: 2.5rem; font-weight: 900; letter-spacing: 6px; color: var(--primary); }
+.room-badge .label { font-size: 0.75rem; color: var(--muted); margin-top: 2px; }
+
+/* Activity cards (teacher) */
+.activity-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin: 16px 0; }
+.activity-card {
+  border-radius: 12px; border: 2px solid var(--border);
+  padding: 16px 10px; text-align: center; cursor: pointer; transition: all 0.15s;
+  background: white;
+}
+.activity-card:hover { border-color: var(--primary); }
+.activity-card.active { border-color: var(--primary); background: #eff6ff; }
+.activity-card.active .act-icon { transform: scale(1.1); }
+.act-icon { font-size: 1.8rem; display: block; margin-bottom: 6px; }
+.act-name { font-size: 0.75rem; font-weight: 600; color: var(--text); }
+
+/* Tabs (teacher) */
+.tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+.tab { flex: 1; padding: 9px; border-radius: 8px; border: 1.5px solid var(--border); background: white; cursor: pointer; font-size: 0.85rem; font-weight: 600; color: var(--muted); transition: all 0.15s; }
+.tab.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+/* Bar chart (poll results) */
+.bar-item { margin-bottom: 14px; }
+.bar-label { display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 5px; font-weight: 500; }
+.bar-track { background: #e2e8f0; border-radius: 6px; height: 22px; overflow: hidden; }
+.bar-fill { height: 100%; border-radius: 6px; transition: width 0.5s ease; background: linear-gradient(90deg, var(--primary), var(--primary2)); }
+
+/* Word cloud */
+#wordcloud-display {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: center;
+  gap: 10px; padding: 20px; min-height: 200px;
+}
+.wc-word {
+  display: inline-block; border-radius: 8px; padding: 4px 10px;
+  font-weight: 700; transition: transform 0.3s ease;
+  animation: fadeIn 0.4s ease;
+}
+@keyframes fadeIn { from { opacity: 0; transform: scale(0.7); } to { opacity: 1; transform: scale(1); } }
+
+/* Q&A list */
+.qa-list { display: flex; flex-direction: column; gap: 10px; max-height: 400px; overflow-y: auto; }
+.qa-item {
+  padding: 12px 14px; border-radius: 10px; border: 1.5px solid var(--border);
+  background: white; position: relative;
+}
+.qa-item.pinned { border-color: var(--warning); background: #fffbeb; }
+.qa-item-text { font-size: 0.9rem; color: var(--text); }
+.qa-item-meta { font-size: 0.75rem; color: var(--muted); margin-top: 4px; }
+.pin-btn { position: absolute; top: 10px; right: 10px; background: none; border: none; font-size: 1rem; cursor: pointer; opacity: 0.5; }
+.pin-btn:hover, .pin-btn.active { opacity: 1; }
+
+/* Vote option buttons */
+.option-btn {
+  display: block; width: 100%; padding: 14px; margin-bottom: 10px;
+  border-radius: 10px; border: 2px solid var(--border); background: white;
+  font-size: 1rem; cursor: pointer; text-align: left; transition: all 0.15s; font-family: inherit;
+}
+.option-btn:hover { border-color: var(--primary); background: #eff6ff; }
+.option-btn.selected { border-color: var(--primary); background: var(--primary); color: white; }
+.option-btn:disabled { cursor: default; }
+
+/* Waiting screen */
+.waiting-anim { text-align: center; padding: 30px; }
+.waiting-anim .dots { font-size: 2rem; animation: blink 1.5s infinite; }
+@keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+/* Toast */
+#toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+  background: #1e293b; color: white; padding: 10px 20px; border-radius: 10px;
+  font-size: 0.85rem; z-index: 9999; opacity: 0; transition: opacity 0.3s;
+  pointer-events: none; white-space: nowrap;
+}
+#toast.show { opacity: 1; }
+
+/* Display screen (projector) */
+.display-screen {
+  background: linear-gradient(135deg, #0f172a, #1e3a5f);
+  min-height: 100vh; color: white; padding: 30px;
+}
+.display-title { font-size: 1.5rem; font-weight: 700; text-align: center; margin-bottom: 24px; opacity: 0.8; }
+.count-badge {
+  display: inline-block; background: rgba(255,255,255,0.15);
+  border-radius: 20px; padding: 4px 14px; font-size: 0.85rem; margin-bottom: 16px;
+}
+
+/* Misc */
+.divider { height: 1px; background: var(--border); margin: 16px 0; }
+.section-label { font-size: 0.75rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+.gap { margin-top: 10px; }
+.gap-sm { margin-top: 6px; }
+.error { color: var(--danger); font-size: 0.82rem; margin-top: 6px; }
+.success-text { color: var(--success); font-size: 0.82rem; margin-top: 6px; }
+h2 { font-size: 1.2rem; font-weight: 700; margin-bottom: 12px; }
+h3 { font-size: 1rem; font-weight: 600; margin-bottom: 8px; }
+.center { text-align: center; }
+.flex-row { display: flex; gap: 8px; }
+.submitted-msg { text-align: center; padding: 20px; color: var(--success); font-weight: 600; font-size: 1.1rem; }
+
+/* Config notice */
+.config-notice {
+  background: #fef9c3; border: 1.5px solid #fde047; border-radius: 10px;
+  padding: 12px 14px; font-size: 0.82rem; color: #713f12; margin-bottom: 16px;
+}
+
+@media (max-width: 400px) {
+  .activity-grid { grid-template-columns: 1fr 1fr 1fr; }
+  .act-name { font-size: 0.65rem; }
+}
+</style>
+</head>
+<body>
+
+<!-- ===== LANDING ===== -->
+<div id="screen-landing" class="screen active">
+  <div class="logo">
+    <h1>🎓 ClassLive</h1>
+    <p>リアルタイム授業ツール</p>
+  </div>
+  <div class="card" style="max-width:360px">
+    <div id="config-warning" class="config-notice" style="display:none">
+      ⚠️ Firebase の設定が必要です。下部の手順を確認してください。
+    </div>
+    <div class="section-label">ルームコードを入力</div>
+    <input id="join-code" type="text" placeholder="例: AB12" maxlength="6"
+      style="text-align:center;font-size:1.6rem;font-weight:800;letter-spacing:6px;text-transform:uppercase">
+    <div class="gap"></div>
+    <button class="btn btn-primary" onclick="joinRoom()">参加する →</button>
+    <div id="join-error" class="error" style="display:none"></div>
+    <div class="divider"></div>
+    <button class="btn btn-ghost btn-sm" style="width:100%" onclick="showTeacherLogin()">講師ログイン</button>
+  </div>
+</div>
+
+<!-- ===== TEACHER LOGIN ===== -->
+<div id="screen-teacher-login" class="screen">
+  <div class="card" style="max-width:340px">
+    <h2>🔐 講師ログイン</h2>
+    <div class="section-label">パスワード</div>
+    <input id="t-password" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')teacherLogin()">
+    <div id="login-error" class="error" style="display:none"></div>
+    <div class="gap"></div>
+    <button class="btn btn-primary" onclick="teacherLogin()">ログイン</button>
+    <div class="gap"></div>
+    <button class="btn btn-ghost" onclick="showScreen('screen-landing')">← 戻る</button>
+  </div>
+</div>
+
+<!-- ===== TEACHER DASHBOARD ===== -->
+<div id="screen-teacher" class="screen top">
+  <div class="card card-wide" style="max-width:660px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <span style="font-weight:800;font-size:1.1rem">🎓 ClassLive 管理</span>
+      <button class="btn btn-ghost btn-sm" onclick="teacherLogout()">ログアウト</button>
+    </div>
+
+    <!-- Room code -->
+    <div class="room-badge">
+      <div class="label">ルームコード（学生に伝えてください）</div>
+      <div class="code" id="display-room-code">----</div>
+      <div class="label" id="display-room-url" style="margin-top:4px;font-size:0.7rem"></div>
+    </div>
+
+    <div class="section-label">アクティビティを選択</div>
+    <div class="activity-grid">
+      <div class="activity-card" id="act-wordcloud" onclick="setActivity('wordcloud')">
+        <span class="act-icon">☁️</span>
+        <span class="act-name">ワードクラウド</span>
+      </div>
+      <div class="activity-card" id="act-poll" onclick="setActivity('poll')">
+        <span class="act-icon">📊</span>
+        <span class="act-name">アンケート</span>
+      </div>
+      <div class="activity-card" id="act-qa" onclick="setActivity('qa')">
+        <span class="act-icon">💬</span>
+        <span class="act-name">Q&amp;A</span>
+      </div>
+    </div>
+    <button class="btn btn-danger btn-sm" style="margin-bottom:14px" onclick="setActivity(null)">⏹ アクティビティを停止</button>
+
+    <div class="divider"></div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab active" id="tab-wordcloud" onclick="switchTab('wordcloud')">☁️ ワードクラウド</button>
+      <button class="tab" id="tab-poll" onclick="switchTab('poll')">📊 アンケート</button>
+      <button class="tab" id="tab-qa" onclick="switchTab('qa')">💬 Q&amp;A</button>
+    </div>
+
+    <!-- Wordcloud tab -->
+    <div id="t-tab-wordcloud">
+      <div class="section-label">回答数: <span id="wc-count">0</span></div>
+      <div id="wordcloud-display"></div>
+      <div class="gap"></div>
+      <button class="btn btn-ghost btn-sm" onclick="clearWordcloud()">🗑 回答をクリア</button>
+    </div>
+
+    <!-- Poll tab -->
+    <div id="t-tab-poll" style="display:none">
+      <div class="section-label">質問文</div>
+      <input id="poll-question-input" type="text" placeholder="例: 日本の男女格差についてどう思いますか？">
+      <div class="gap-sm"></div>
+      <div class="section-label">選択肢（空白は除外）</div>
+      <div id="poll-options-list"></div>
+      <button class="btn btn-ghost btn-sm gap" onclick="addPollOption()">+ 選択肢を追加</button>
+      <div class="gap"></div>
+      <button class="btn btn-primary btn-sm" onclick="savePollSettings()">✓ 設定を保存</button>
+      <div class="divider"></div>
+      <div class="section-label">結果: <span id="poll-vote-count">0</span> 票</div>
+      <div id="poll-results-teacher"></div>
+      <div class="gap"></div>
+      <button class="btn btn-ghost btn-sm" onclick="clearPoll()">🗑 投票をリセット</button>
+    </div>
+
+    <!-- Q&A tab -->
+    <div id="t-tab-qa" style="display:none">
+      <div class="section-label">質問一覧: <span id="qa-count">0</span> 件（📌 = ピン留め）</div>
+      <div id="qa-list-teacher" class="qa-list"></div>
+      <div class="gap"></div>
+      <button class="btn btn-ghost btn-sm" onclick="clearQA()">🗑 質問をクリア</button>
+    </div>
+
+    <div class="divider"></div>
+    <button class="btn btn-primary btn-sm" onclick="openDisplay()">📽 表示画面を別タブで開く</button>
+  </div>
+</div>
+
+<!-- ===== STUDENT WAITING ===== -->
+<div id="screen-waiting" class="screen">
+  <div class="card" style="max-width:340px;text-align:center">
+    <div class="waiting-anim">
+      <div style="font-size:3rem">⏳</div>
+      <div class="dots">●●●</div>
+      <div style="font-weight:600;margin-top:12px">授業の準備中です</div>
+      <div style="color:var(--muted);font-size:0.85rem;margin-top:6px">先生が開始するまでお待ちください</div>
+    </div>
+    <div class="divider"></div>
+    <div>ルームコード: <strong id="student-room-code">----</strong></div>
+    <div class="gap"></div>
+    <button class="btn btn-ghost btn-sm" onclick="showScreen('screen-landing')">← 退出</button>
+  </div>
+</div>
+
+<!-- ===== STUDENT: WORDCLOUD ===== -->
+<div id="screen-student-wordcloud" class="screen">
+  <div class="card" style="max-width:360px">
+    <h2>☁️ ワードクラウド</h2>
+    <div style="color:var(--muted);font-size:0.88rem;margin-bottom:14px" id="wc-prompt-text">思い浮かぶ言葉を入力してください</div>
+    <div id="wc-submitted" class="submitted-msg" style="display:none">✓ 送信しました！</div>
+    <div id="wc-form">
+      <input id="wc-input" type="text" placeholder="例: 平等" maxlength="20"
+        onkeydown="if(event.key==='Enter')submitWord()">
+      <div class="gap"></div>
+      <button class="btn btn-primary" onclick="submitWord()">送信する</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== STUDENT: POLL ===== -->
+<div id="screen-student-poll" class="screen">
+  <div class="card" style="max-width:360px">
+    <h2>📊 アンケート</h2>
+    <div id="poll-question-display" style="font-size:1rem;font-weight:600;margin-bottom:16px;line-height:1.5"></div>
+    <div id="poll-submitted" class="submitted-msg" style="display:none">✓ 回答を送信しました！</div>
+    <div id="poll-options-display"></div>
+  </div>
+</div>
+
+<!-- ===== STUDENT: Q&A ===== -->
+<div id="screen-student-qa" class="screen">
+  <div class="card" style="max-width:400px">
+    <h2>💬 Q&amp;A</h2>
+    <div style="color:var(--muted);font-size:0.85rem;margin-bottom:10px">匿名で質問を投稿できます</div>
+    <div id="qa-submitted" class="submitted-msg" style="display:none">✓ 送信しました！</div>
+    <div id="qa-form">
+      <textarea id="qa-input" placeholder="質問や感想を入力..." maxlength="200"></textarea>
+      <div class="gap"></div>
+      <button class="btn btn-primary" onclick="submitQA()">送信する</button>
+    </div>
+    <div class="divider"></div>
+    <div class="section-label">みんなの質問</div>
+    <div id="qa-list-student" class="qa-list"></div>
+  </div>
+</div>
+
+<!-- ===== DISPLAY SCREEN ===== -->
+<div id="screen-display" style="display:none" class="display-screen">
+  <div style="max-width:900px;margin:0 auto">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <span style="font-size:1.2rem;font-weight:800;opacity:0.9">🎓 ClassLive</span>
+      <div>
+        ルームコード: <strong id="disp-code" style="font-size:1.3rem;letter-spacing:4px"></strong>
+      </div>
+    </div>
+
+    <div id="disp-none" style="text-align:center;padding:60px;opacity:0.5">
+      <div style="font-size:4rem">🎓</div>
+      <div style="font-size:1.2rem;margin-top:12px">アクティビティ待機中</div>
+    </div>
+
+    <!-- Wordcloud display -->
+    <div id="disp-wordcloud" style="display:none">
+      <div class="display-title">☁️ ワードクラウド</div>
+      <div class="count-badge" id="disp-wc-count">0 件の回答</div>
+      <div id="disp-wordcloud-cloud" style="display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:12px;padding:20px;min-height:300px"></div>
+    </div>
+
+    <!-- Poll display -->
+    <div id="disp-poll" style="display:none">
+      <div class="display-title">📊 アンケート</div>
+      <div id="disp-poll-question" style="font-size:1.3rem;font-weight:700;text-align:center;margin-bottom:20px"></div>
+      <div class="count-badge" id="disp-poll-count">0 票</div>
+      <div id="disp-poll-bars" style="margin-top:16px"></div>
+    </div>
+
+    <!-- Q&A display -->
+    <div id="disp-qa" style="display:none">
+      <div class="display-title">💬 Q&amp;A</div>
+      <div class="count-badge" id="disp-qa-count">0 件</div>
+      <div id="disp-qa-list" style="margin-top:16px;display:flex;flex-direction:column;gap:12px"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<!-- Firebase SDKs -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+
+<script>
+// ============================================================
+// ⚠️  Firebase 設定をここに貼り付けてください
+//     https://console.firebase.google.com/ → プロジェクト設定 → マイアプリ → 設定
+// ============================================================
+const FIREBASE_CONFIG = {
+  apiKey:            "AIzaSyA1tkUB5dYA_wgVJkQY97zS9n_cPBlPL2s",
+  authDomain:        "claive-7abfb.firebaseapp.com",
+  databaseURL:       "https://claive-7abfb-default-rtdb.firebaseio.com",
+  projectId:         "claive-7abfb",
+  storageBucket:     "claive-7abfb.firebasestorage.app",
+  messagingSenderId: "1016824803977",
+  appId:             "1:1016824803977:web:f29549b2d806f2b1d50c58"
+};
+// ============================================================
+
+const TEACHER_PASSWORD = 'sensei2026'; // UniQuizと同じ
+
+// ---- State ----
+let db = null;
+let roomCode = '';
+let role = ''; // 'teacher' | 'student'
+let currentActivity = null;
+let activeListeners = [];
+let hasSubmittedWord = false;
+let hasVoted = false;
+let hasSubmittedQA = false;
+let isDisplayWindow = false;
+
+// ---- Firebase init ----
+function initFirebase() {
+  if (FIREBASE_CONFIG.apiKey === 'YOUR_API_KEY') {
+    document.getElementById('config-warning').style.display = 'block';
+    return false;
+  }
+  try {
+    if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+    db = firebase.database();
+    return true;
+  } catch(e) {
+    showToast('Firebase の初期化に失敗しました: ' + e.message);
+    return false;
+  }
+}
+
+// ---- Screen management ----
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  const el = document.getElementById(id);
+  if (el) { el.classList.add('active'); el.style.display = ''; }
+}
+
+// ---- Toast ----
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ---- Landing ----
+function joinRoom() {
+  if (!initFirebase()) return;
+  const code = document.getElementById('join-code').value.trim().toUpperCase();
+  if (code.length < 2) { showJoinError('ルームコードを入力してください'); return; }
+  const errEl = document.getElementById('join-error');
+  errEl.style.display = 'none';
+
+  db.ref('rooms/' + code).once('value').then(snap => {
+    if (!snap.exists()) { showJoinError('ルームが見つかりません'); return; }
+    roomCode = code;
+    role = 'student';
+    document.getElementById('student-room-code').textContent = code;
+    removeListeners();
+    listenAsStudent();
+    showScreen('screen-waiting');
+  }).catch(e => showJoinError('接続エラー: ' + e.message));
+}
+function showJoinError(msg) {
+  const el = document.getElementById('join-error');
+  el.textContent = msg; el.style.display = 'block';
+}
+
+// ---- Teacher login ----
+function showTeacherLogin() { showScreen('screen-teacher-login'); }
+function teacherLogin() {
+  const pw = document.getElementById('t-password').value;
+  if (pw !== TEACHER_PASSWORD) {
+    document.getElementById('login-error').textContent = 'パスワードが違います';
+    document.getElementById('login-error').style.display = 'block';
+    return;
+  }
+  if (!initFirebase()) return;
+  role = 'teacher';
+  // Generate room code if not set, or reuse last
+  const saved = sessionStorage.getItem('cl-room');
+  roomCode = saved || generateCode();
+  sessionStorage.setItem('cl-room', roomCode);
+  openTeacherDashboard();
+}
+function teacherLogout() {
+  removeListeners();
+  setActivity(null);
+  role = ''; roomCode = '';
+  showScreen('screen-landing');
+}
+function generateCode() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let code = '';
+  for (let i = 0; i < 4; i++) code += chars[Math.floor(Math.random() * chars.length)];
+  return code;
+}
+
+// ---- Teacher dashboard ----
+function openTeacherDashboard() {
+  // Create room in Firebase
+  db.ref('rooms/' + roomCode).update({ active: true, createdAt: Date.now() });
+
+  document.getElementById('display-room-code').textContent = roomCode;
+  document.getElementById('display-room-url').textContent = location.href;
+
+  // Default poll options
+  renderPollOptions(['はい', 'いいえ', 'わからない']);
+
+  removeListeners();
+  listenAsTeacher();
+  showScreen('screen-teacher');
+  switchTab('wordcloud');
+}
+
+let currentTab = 'wordcloud';
+function switchTab(tab) {
+  currentTab = tab;
+  ['wordcloud','poll','qa'].forEach(t => {
+    document.getElementById('tab-' + t).classList.toggle('active', t === tab);
+    document.getElementById('t-tab-' + t).style.display = t === tab ? '' : 'none';
+  });
+}
+
+// ---- Activity control ----
+function setActivity(act) {
+  if (!db || !roomCode) return;
+  currentActivity = act;
+  db.ref('rooms/' + roomCode + '/activity').set(act);
+  ['wordcloud','poll','qa'].forEach(t => {
+    document.getElementById('act-' + t).classList.toggle('active', t === act);
+  });
+  showToast(act ? `「${act}」を開始しました` : 'アクティビティを停止しました');
+}
+
+// ---- Poll settings ----
+let pollOptions = ['はい', 'いいえ', 'わからない'];
+function renderPollOptions(opts) {
+  pollOptions = opts;
+  const list = document.getElementById('poll-options-list');
+  list.innerHTML = '';
+  opts.forEach((o, i) => {
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;gap:6px;margin-bottom:6px';
+    row.innerHTML = `<input type="text" value="${escHtml(o)}" placeholder="選択肢 ${i+1}" style="flex:1">
+      <button class="btn btn-ghost btn-sm" onclick="removePollOption(${i})" style="width:36px">✕</button>`;
+    list.appendChild(row);
+  });
+}
+function addPollOption() {
+  const inputs = document.querySelectorAll('#poll-options-list input');
+  const opts = Array.from(inputs).map(i => i.value.trim());
+  opts.push('');
+  renderPollOptions(opts);
+}
+function removePollOption(idx) {
+  const inputs = document.querySelectorAll('#poll-options-list input');
+  const opts = Array.from(inputs).map(i => i.value.trim()).filter((_,i) => i !== idx);
+  renderPollOptions(opts);
+}
+function savePollSettings() {
+  const q = document.getElementById('poll-question-input').value.trim();
+  const inputs = document.querySelectorAll('#poll-options-list input');
+  const opts = Array.from(inputs).map(i => i.value.trim()).filter(Boolean);
+  if (!q) { showToast('質問文を入力してください'); return; }
+  if (opts.length < 2) { showToast('選択肢を2つ以上入力してください'); return; }
+  db.ref('rooms/' + roomCode + '/poll').update({ question: q, options: opts });
+  showToast('✓ アンケート設定を保存しました');
+}
+
+// ---- Clear actions ----
+function clearWordcloud() {
+  if (!confirm('ワードクラウドの回答をすべて削除しますか？')) return;
+  db.ref('rooms/' + roomCode + '/wordcloud').remove();
+}
+function clearPoll() {
+  if (!confirm('投票結果をリセットしますか？')) return;
+  db.ref('rooms/' + roomCode + '/poll/votes').remove();
+}
+function clearQA() {
+  if (!confirm('すべての質問を削除しますか？')) return;
+  db.ref('rooms/' + roomCode + '/qa').remove();
+}
+
+// ---- Teacher listeners ----
+function listenAsTeacher() {
+  const base = db.ref('rooms/' + roomCode);
+
+  // Word cloud
+  const wcRef = base.child('wordcloud');
+  const wcOff = onValue(wcRef, snap => {
+    const words = {};
+    snap.forEach(child => {
+      const w = (child.val().word || '').trim();
+      if (w) words[w] = (words[w] || 0) + 1;
+    });
+    const total = snap.numChildren ? snap.numChildren() : Object.values(words).reduce((a,b)=>a+b,0);
+    document.getElementById('wc-count').textContent = total;
+    renderWordCloud('wordcloud-display', words);
+    renderWordCloud('disp-wordcloud-cloud', words);
+    document.getElementById('disp-wc-count').textContent = total + ' 件の回答';
+  });
+  activeListeners.push(wcOff);
+
+  // Poll
+  const pollRef = base.child('poll');
+  const pollOff = onValue(pollRef, snap => {
+    const data = snap.val() || {};
+    const opts = data.options || ['はい','いいえ','わからない'];
+    const votes = data.votes ? Object.values(data.votes) : [];
+    const q = data.question || '';
+    document.getElementById('poll-vote-count').textContent = votes.length;
+    if (q) {
+      document.getElementById('poll-question-input').value = q;
+      document.getElementById('disp-poll-question').textContent = q;
+    }
+    renderPollResults('poll-results-teacher', opts, votes, false);
+    renderPollResults('disp-poll-bars', opts, votes, true);
+    document.getElementById('disp-poll-count').textContent = votes.length + ' 票';
+  });
+  activeListeners.push(pollOff);
+
+  // Q&A
+  const qaRef = base.child('qa');
+  const qaOff = onValue(qaRef, snap => {
+    const items = [];
+    snap.forEach(child => items.push({ id: child.key, ...child.val() }));
+    items.sort((a,b) => (b.pinned?1:0) - (a.pinned?1:0) || b.timestamp - a.timestamp);
+    document.getElementById('qa-count').textContent = items.length;
+    document.getElementById('disp-qa-count').textContent = items.length + ' 件';
+    renderQAList('qa-list-teacher', items, true);
+    renderQAList('disp-qa-list', items, false);
+  });
+  activeListeners.push(qaOff);
+
+  // Activity state
+  const actOff = onValue(base.child('activity'), snap => {
+    const act = snap.val();
+    currentActivity = act;
+    ['wordcloud','poll','qa'].forEach(t => {
+      document.getElementById('act-' + t).classList.toggle('active', t === act);
+    });
+  });
+  activeListeners.push(actOff);
+}
+
+// ---- Student listeners ----
+function listenAsStudent() {
+  const base = db.ref('rooms/' + roomCode);
+  const actOff = onValue(base.child('activity'), snap => {
+    const act = snap.val();
+    currentActivity = act;
+    if (!act) {
+      showScreen('screen-waiting');
+    } else if (act === 'wordcloud') {
+      hasSubmittedWord = false;
+      document.getElementById('wc-submitted').style.display = 'none';
+      document.getElementById('wc-form').style.display = 'block';
+      document.getElementById('wc-input').value = '';
+      showScreen('screen-student-wordcloud');
+    } else if (act === 'poll') {
+      loadPollForStudent();
+    } else if (act === 'qa') {
+      hasSubmittedQA = false;
+      document.getElementById('qa-submitted').style.display = 'none';
+      document.getElementById('qa-form').style.display = 'block';
+      document.getElementById('qa-input').value = '';
+      listenQAForStudent();
+      showScreen('screen-student-qa');
+    }
+  });
+  activeListeners.push(actOff);
+}
+
+function loadPollForStudent() {
+  hasVoted = false;
+  const pollRef = db.ref('rooms/' + roomCode + '/poll');
+  const off = onValue(pollRef, snap => {
+    const data = snap.val() || {};
+    const opts = data.options || [];
+    const q = data.question || 'アンケート';
+    document.getElementById('poll-question-display').textContent = q;
+    const cont = document.getElementById('poll-options-display');
+    if (!hasVoted) {
+      cont.innerHTML = opts.map((o, i) =>
+        `<button class="option-btn" onclick="submitVote(${i})">${escHtml(o)}</button>`
+      ).join('');
+    }
+  });
+  activeListeners.push(off);
+  showScreen('screen-student-poll');
+}
+
+function listenQAForStudent() {
+  const qaRef = db.ref('rooms/' + roomCode + '/qa');
+  const off = onValue(qaRef, snap => {
+    const items = [];
+    snap.forEach(child => items.push({ id: child.key, ...child.val() }));
+    items.sort((a,b) => (b.pinned?1:0) - (a.pinned?1:0) || b.timestamp - a.timestamp);
+    renderQAList('qa-list-student', items, false);
+  });
+  activeListeners.push(off);
+}
+
+// ---- Submit actions (student) ----
+function submitWord() {
+  const w = document.getElementById('wc-input').value.trim();
+  if (!w) { showToast('言葉を入力してください'); return; }
+  db.ref('rooms/' + roomCode + '/wordcloud').push({ word: w, timestamp: Date.now() });
+  document.getElementById('wc-form').style.display = 'none';
+  document.getElementById('wc-submitted').style.display = 'block';
+  hasSubmittedWord = true;
+}
+function submitVote(optIdx) {
+  if (hasVoted) return;
+  hasVoted = true;
+  db.ref('rooms/' + roomCode + '/poll/votes').push({ option: optIdx, timestamp: Date.now() });
+  document.getElementById('poll-submitted').style.display = 'block';
+  document.querySelectorAll('.option-btn').forEach((b, i) => {
+    b.disabled = true;
+    if (i === optIdx) b.classList.add('selected');
+  });
+}
+function submitQA() {
+  const t = document.getElementById('qa-input').value.trim();
+  if (!t) { showToast('質問を入力してください'); return; }
+  db.ref('rooms/' + roomCode + '/qa').push({ text: t, timestamp: Date.now(), pinned: false });
+  document.getElementById('qa-form').style.display = 'none';
+  document.getElementById('qa-submitted').style.display = 'block';
+  document.getElementById('qa-input').value = '';
+}
+
+// ---- Rendering helpers ----
+function renderWordCloud(containerId, words) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  const entries = Object.entries(words).sort((a,b) => b[1]-a[1]);
+  const max = entries[0] ? entries[0][1] : 1;
+  const colors = ['#2563eb','#0891b2','#7c3aed','#db2777','#059669','#d97706','#dc2626','#0284c7'];
+  el.innerHTML = entries.map(([w, cnt], i) => {
+    const size = 1 + (cnt / max) * 2.5;
+    const color = colors[i % colors.length];
+    return `<span class="wc-word" style="font-size:${size.toFixed(2)}rem;color:${color};background:${color}18">${escHtml(w)}<sup style="font-size:0.5em;margin-left:2px">${cnt}</sup></span>`;
+  }).join('');
+}
+
+function renderPollResults(containerId, opts, votes, dark) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  const counts = opts.map((_, i) => votes.filter(v => v.option === i).length);
+  const total = votes.length || 1;
+  el.innerHTML = opts.map((o, i) => {
+    const pct = Math.round((counts[i] / total) * 100);
+    return `<div class="bar-item">
+      <div class="bar-label" style="${dark?'color:white':''}">
+        <span>${escHtml(o)}</span><span>${counts[i]} 票 (${pct}%)</span>
+      </div>
+      <div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div>
+    </div>`;
+  }).join('');
+}
+
+function renderQAList(containerId, items, isTeacher) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  if (items.length === 0) { el.innerHTML = '<div style="color:var(--muted);font-size:0.85rem;text-align:center;padding:20px">まだ質問はありません</div>'; return; }
+  el.innerHTML = items.map(item => {
+    const pinBtn = isTeacher
+      ? `<button class="pin-btn ${item.pinned?'active':''}" onclick="togglePin('${item.id}')" title="ピン留め">📌</button>`
+      : '';
+    const pinStyle = item.pinned ? 'border-color:#fbbf24;background:#fffbeb' : '';
+    return `<div class="qa-item" style="${pinStyle}">
+      ${pinBtn}
+      <div class="qa-item-text">${escHtml(item.text)}</div>
+      ${item.pinned ? '<div class="qa-item-meta">📌 ピン留め中</div>' : ''}
+    </div>`;
+  }).join('');
+}
+
+function togglePin(id) {
+  const ref = db.ref('rooms/' + roomCode + '/qa/' + id + '/pinned');
+  ref.once('value').then(s => ref.set(!s.val()));
+}
+
+// ---- Display window ----
+function openDisplay() {
+  const url = location.href + '?display=' + roomCode;
+  window.open(url, '_blank');
+}
+
+function initDisplayMode(code) {
+  if (!initFirebase()) return;
+  isDisplayWindow = true;
+  roomCode = code;
+  document.getElementById('disp-code').textContent = code;
+
+  // Hide all other screens, show display
+  document.querySelectorAll('.screen').forEach(s => { s.style.display = 'none'; s.classList.remove('active'); });
+  document.getElementById('screen-display').style.display = 'block';
+  document.body.style.background = 'transparent';
+
+  // Listen to activity
+  const base = db.ref('rooms/' + code);
+  onValue(base.child('activity'), snap => {
+    const act = snap.val();
+    document.getElementById('disp-none').style.display = act ? 'none' : 'block';
+    document.getElementById('disp-wordcloud').style.display = act === 'wordcloud' ? 'block' : 'none';
+    document.getElementById('disp-poll').style.display = act === 'poll' ? 'block' : 'none';
+    document.getElementById('disp-qa').style.display = act === 'qa' ? 'block' : 'none';
+  });
+
+  // Word cloud
+  onValue(base.child('wordcloud'), snap => {
+    const words = {};
+    snap.forEach(child => {
+      const w = (child.val().word || '').trim();
+      if (w) words[w] = (words[w] || 0) + 1;
+    });
+    renderWordCloud('disp-wordcloud-cloud', words);
+    document.getElementById('disp-wc-count').textContent = snap.numChildren() + ' 件の回答';
+  });
+
+  // Poll
+  onValue(base.child('poll'), snap => {
+    const data = snap.val() || {};
+    const opts = data.options || [];
+    const votes = data.votes ? Object.values(data.votes) : [];
+    document.getElementById('disp-poll-question').textContent = data.question || '';
+    document.getElementById('disp-poll-count').textContent = votes.length + ' 票';
+    renderPollResults('disp-poll-bars', opts, votes, true);
+  });
+
+  // Q&A
+  onValue(base.child('qa'), snap => {
+    const items = [];
+    snap.forEach(child => items.push({ id: child.key, ...child.val() }));
+    items.sort((a,b) => (b.pinned?1:0) - (a.pinned?1:0) || b.timestamp - a.timestamp);
+    document.getElementById('disp-qa-count').textContent = items.length + ' 件';
+    renderQAList('disp-qa-list', items, false);
+  });
+}
+
+// ---- Firebase helper (returns unsubscribe fn) ----
+function onValue(ref, cb) {
+  ref.on('value', cb);
+  return () => ref.off('value', cb);
+}
+
+function removeListeners() {
+  activeListeners.forEach(fn => fn());
+  activeListeners = [];
+}
+
+// ---- Util ----
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ---- Room code input: auto-uppercase ----
+document.getElementById('join-code').addEventListener('input', function() {
+  this.value = this.value.toUpperCase();
+});
+
+// ---- Entry point ----
+const urlParams = new URLSearchParams(location.search);
+const displayCode = urlParams.get('display');
+if (displayCode) {
+  // Wait for Firebase SDKs to load then init display
+  window.addEventListener('load', () => initDisplayMode(displayCode));
+} else {
+  if (FIREBASE_CONFIG.apiKey === 'YOUR_API_KEY') {
+    document.getElementById('config-warning').style.display = 'block';
+  }
+}
+</script>
+
+<!-- Firebase セットアップ手順 (アプリ内ガイド) -->
+<div id="setup-guide" style="position:fixed;bottom:0;left:0;right:0;background:#1e293b;color:white;padding:14px 20px;font-size:0.8rem;border-top:2px solid #2563eb;display:none" id="setup-footer">
+</div>
+
+</body>
+</html>
