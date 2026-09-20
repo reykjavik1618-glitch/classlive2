@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>ClassLive QRコード</title>
+<style>
+body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; margin: 0; background: #f0f4ff; }
+.box { background: white; border-radius: 20px; padding: 40px; text-align: center; box-shadow: 0 4px 24px rgba(37,99,235,0.12); }
+h2 { color: #1d4ed8; margin-bottom: 8px; font-size: 1.5rem; }
+p { color: #64748b; font-size: 0.85rem; margin-bottom: 24px; }
+#qr { margin: 0 auto 20px; }
+.url { font-size: 0.75rem; color: #94a3b8; margin-bottom: 20px; word-break: break-all; }
+button { background: linear-gradient(135deg,#2563eb,#0891b2); color: white; border: none; padding: 12px 28px; border-radius: 10px; font-size: 1rem; cursor: pointer; font-weight: 600; }
+button:hover { opacity: 0.9; }
+</style>
+</head>
+<body>
+<div class="box">
+  <h2>🎓 ClassLive</h2>
+  <p>スマホでスキャンして参加してください</p>
+  <div id="qr"></div>
+  <div class="url">https://reykjavik1618-glitch.github.io/classlive2/classlive.html</div>
+  <button onclick="downloadQR()">📥 PNG として保存</button>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+const url = 'https://reykjavik1618-glitch.github.io/classlive2/classlive.html';
+new QRCode(document.getElementById('qr'), {
+  text: url,
+  width: 240,
+  height: 240,
+  colorDark: '#1d4ed8',
+  colorLight: '#ffffff',
+  correctLevel: QRCode.CorrectLevel.M
+});
+
+function downloadQR() {
+  setTimeout(() => {
+    const canvas = document.querySelector('#qr canvas');
+    if (!canvas) { alert('少し待ってから再試行してください'); return; }
+    const link = document.createElement('a');
+    link.download = 'classlive_qr.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  }, 300);
+}
+</script>
+</body>
+</html>
